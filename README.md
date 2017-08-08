@@ -47,13 +47,18 @@ div.container
         var dragplugin = $('.container').dargplugin(option);
         /**
          *  options arguments
-         *  sidebar : element class to rend sidebar
-         *  center : element class to rend center
-         *  edit : element class for edit action, it rend edit model on sidebar & center
-         *  save : element class for save action, it can be save data on sidebar & center
-         *  load : element class for load action, it can be load data on sidebar & center
-         *  clear : element class for clear action, it can be clear all widget on sidebar & center
-         *  remove : element class for remove action, it only remove widget on center
+         *  sidebar : '.grid-sidebar', // element class to rend sidebar
+         *  center : '.grid-center', // element class to rend center
+         *  edit : '.grid-edit', // element class for edit action, it rend edit model on sidebar & center
+         *  save : '.grid-save', // element class for save action, it can be save data on sidebar & center
+         *  load : '.grid-load', // element class for load action, it can be load data on sidebar & center
+         *  clear : '.grid-clear', // element class for clear action, it can be clear all widget on sidebar & center
+         *  remove : '.grid-remove', // element class for remove action, it only remove widget on center
+         *  handle : '.panel-heading', // choose element to drag and move
+         *  title : '.panel-title', // panel title class
+         *  body : '.panel-body', // panel body class
+         *  onEditModel : false, // if true, it could drag when init
+         *  autoSave : true, // if false, you must click save button or call save function can be saved
          */
     });
 </script>

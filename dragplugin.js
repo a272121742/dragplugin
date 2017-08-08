@@ -18,7 +18,11 @@
       load : '.grid-load',
       clear : '.grid-clear',
       remove : '.grid-remove',
-      onDragMode : false
+      handle : '.panel-heading',
+      title : '.panel-title',
+      body : '.panel-body',
+      onEditModel : false,
+      autoSave : true
     };
 
     var container = $(this);
@@ -34,6 +38,18 @@
                         + '</div>';
     var titleTemplate = '<h3 class="panel-title pull-left" data-toggle="tooltip" data-placement="bottom" title=""></h3>'
     var resizableHandleTemplate = '<div class="ui-resizable-handle ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se" style="z-index: 90; display: none;"></div>';
+
+    var GRID_STACK_DATA = 'gridstack';
+    var GRID_STACK_NODE_DATA = '_gridstack_node';
+    var GRID_STACK_CLASS = '.grid-stack';
+    var GRID_STACK_ITEM_CLASS = '.grid-stack-item';
+
+    /**
+     *  系统添加标志符
+     *  如果为true，则表示正在进行系统添加，系统添加时不进行自动保存
+     *  如果为false，则表示为人工添加，人工添加时，自动保存配置才有效
+     */
+    var systemAdding = true;
 
     var dragModule = (function(){
       return {
@@ -53,31 +69,31 @@
             // 参阅JQuery UI draggable
             draggable : {
               revert: 'invalid',
-              handle: '.panel-heading',
+              handle: options.handle,
               scroll: false,
               appendTo: 'body'
             }
           });
-          this.sidebar = sidebarContainer.data('gridstack');
+          this.sidebar = sidebarContainer.data(GRID_STACK_DATA);
           this.sidebar.isCenter = false;
         },
         // 初始化中心
         initCenter : function(){
           var centerContainer = this.centerContainer = $(options.center).gridstack({
-            acceptWidgets: options.sidebar + ' ' + '.grid-stack-item',
+            acceptWidgets: options.sidebar + ' ' + GRID_STACK_ITEM_CLASS,
             placeholderText: '请选择位置放下',
             width: 12,
             draggable : {
               revert: 'invalid',
-              handle : '.panel-heading',
+              handle : options.handle,
               scroll: false,
               appendTo : 'body'
             }
           });
-          this.center = centerContainer.data('gridstack');
+          this.center = centerContainer.data(GRID_STACK_DATA);
           this.center.isCenter = true;
         },
-        // 创建插件元素
+        // 创建组件元素
         createWidgetElement : function(_id, _title, _body){
           var panel = $(panelTemplate);
           var title = $(titleTemplate).attr('title', _title).html(_title);
@@ -85,7 +101,7 @@
           var body = $(bodyTemplate).html(_body);
           return $('<div>').attr('id', _id).append(panel.append(head).append(body)).append(resizableHandleTemplate);
         },
-        // 添加插件元素
+        // 添加组件元素
         addWidgetElement : function(grid, id, title, body, x, y, width, height){
           var self = this;
           var widget = self.createWidgetElement(id, title, body);
@@ -94,16 +110,16 @@
         },
         // 获取序列化数据
         getSerializedData : function(elClass){
-          return _.map($(elClass + '> .grid-stack-item:visible'), function (el) {
-            el = $(el);
-            var node = el.data('_gridstack_node');
+          return _.map($(elClass + '> .grid-stack-item:visible'), function (element) {
+            var el = $(element);
+            var node = el.data(GRID_STACK_NODE_DATA);
             return {
               x: node.x,
               y: node.y,
               width: node.width,
               height: node.height,
-              title: el.find('.panel-title').html().trim(),
-              body: el.find('.panel-body').html().trim()
+              title: el.find(options.title).html().trim(),
+              body: el.find(options.body).html().trim()
             };
           });
         },
@@ -126,32 +142,31 @@
           var centerContainer = self.centerContainer;
           // 删除
           centerContainer.delegate(options.remove, 'click', function(){
-            var widget = $(this).parents('.grid-stack-item');
-            var height = widget.height();
+            var widget = $(this).parents(GRID_STACK_ITEM_CLASS);
             if(center.grid.nodes.length === 1){
               alert('请至少保留一个可配置窗口');
               return;
             }
-
-            // var dataGsCurrentHeight = parseInt(centerContainer.attr('data-gs-current-height'));
+            // 补丁。widget从center删除后再添加到sidebar时，需要重配HTMLElementAttribute
             center.resize(widget, 4, 4)
             center.removeWidget(widget);
-            widget.find('.panel-title').next().remove();
+            widget.find(options.title).next().remove();
             widget.attr('data-gs-width', 2);
             widget.attr('data-gs-height', 2);
             sidebar.addWidget(widget);
             sidebar.resizable(widget, false);
+            self.autoSave();
           });
           // 添加后追加buttom，并求改为可拖拽样式
           centerContainer.on('added', function(event, items){
             items.forEach(function(item){
               var widget = item.el;
-              widget.find('.panel-title').after(buttonTemplate);
-              // 源码bug，需要移除最后一项，否则无法拖动
+              widget.find(options.title).after(buttonTemplate);
+              // 补丁。源码bug，需要移除最后一项，否则无法拖动
               widget.children().last().remove();
-              // widget.removeClass('ui-resizable-disabled');
               center.resizable(widget, true);
             });
+            self.autoSave();
           });
           // 编辑按钮
           container.delegate(options.edit, 'click', function(){
@@ -173,7 +188,14 @@
             return false;
           });
         },
-        
+        // 自动保存
+        autoSave : function(){
+          var self = this;
+          if(options.autoSave && !systemAdding){
+            self.save();
+          }
+        },
+        // 初始化
         init : function(){
           var self = this;
           self.initSidebar();
@@ -186,9 +208,9 @@
           self.center.setStatic(!onEditModel);
           self.sidebar.setStatic(!onEditModel);
           if(!!onEditModel){
-            self.container.find('.grid-stack').addClass('grid-stack-onEditModel');
+            self.container.find(GRID_STACK_CLASS).addClass('grid-stack-onEditModel');
           }else{
-            self.container.find('.grid-stack').removeClass('grid-stack-onEditModel');
+            self.container.find(GRID_STACK_CLASS).removeClass('grid-stack-onEditModel');
           }
         },
         save : function(){
@@ -198,8 +220,10 @@
         },
         load : function(){
           var self = this;
+          systemAdding = true;
           self.setSerializedData(self.center, self.centerSerializedData);
           self.setSerializedData(self.sidebar, self.sidebarSerializedData);
+          systemAdding = false;
         },
         clear : function(){
           var self = this;
@@ -210,7 +234,7 @@
     })();
 
     dragModule.init();
-
+    // 对外的接口
     var result = {
       edit : dragModule.edit.bind(dragModule),
       save : dragModule.save.bind(dragModule),
