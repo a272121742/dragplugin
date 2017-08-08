@@ -90,7 +90,17 @@ add widget in your sidebar or center. the first argument named `grid` is element
 
 get serialized data on your sidebar or center, without grid element's class, your can get all serialized data
 
+### options
 
+user's config options
+
+### center
+
+the gridstack of center, the api [here](https://github.com/troolee/gridstack.js/tree/develop/doc#api)
+
+### sidebar
+
+the gridstack of sidebar, the api [here](https://github.com/troolee/gridstack.js/tree/develop/doc#api) 
 
 
 

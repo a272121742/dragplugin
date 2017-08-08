@@ -99,14 +99,16 @@
           var title = $(titleTemplate).attr('title', _title).html(_title);
           var head = $(headTemplate).append(title);
           var body = $(bodyTemplate).html(_body);
-          return $('<div>').attr('id', _id).append(panel.append(head).append(body)).append(resizableHandleTemplate);
+          return $('<div>').attr('id', _id).append(panel.append(head).append(body));
         },
         // 添加组件元素
         addWidgetElement : function(grid, id, title, body, x, y, width, height){
           var self = this;
           var widget = self.createWidgetElement(id, title, body);
-          grid.addWidget(widget, x, y, width, height, true);
+          widget.append(grid.isCenter ? resizableHandleTemplate : '');
+          grid.addWidget(widget, x || 0, y || 0, width || 2, height || 2, true);
           grid.resizable(widget, grid.isCenter);
+          grid.setStatic(!options.onEditModel);
         },
         // 获取序列化数据
         getSerializedData : function(elClass){
@@ -202,9 +204,13 @@
           self.initCenter();
           self.events();
           self.edit(options.onEditModel);
+          if(self.center.container.height() === 0){
+            self.center.container.height(400);
+          }
         },
         edit : function(onEditModel){
           var self = this;
+          options.onEditModel = onEditModel;
           self.center.setStatic(!onEditModel);
           self.sidebar.setStatic(!onEditModel);
           if(!!onEditModel){
@@ -249,7 +255,9 @@
           default : return {sidebar : dragModule.sidebarSerializedData, center : dragModule.centerSerializedData};
         }
       },
-      options : options
+      options : options,
+      center : dragModule.center,
+      sidebar : dragModule.sidebar
     };
     return result;
   };
